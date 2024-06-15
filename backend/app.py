@@ -2,8 +2,7 @@
 import json
 
 import dash
-import dash_core_components as dcc
-import dash_html_components as html
+from dash import dcc, html  # Updated import statement
 from dash.dependencies import Input, Output
 import pandas as pd
 import numpy as np
@@ -53,7 +52,7 @@ fig.update_layout(
 )
 
 app.layout = html.Div([
-    html.H1("Reddit Austrain Politics Analysis"),
+    html.H1("Reddit Austrian Politics Analysis"),
     dcc.Graph(id='map', figure=fig),
     dcc.DatePickerRange(
         id='date-picker-range',
@@ -98,11 +97,9 @@ def update_streak_map(clickData, start_date, end_date, slider_value):
     state = clickData['points'][0]['location']
     start_date = pd.to_datetime(start_date)
     end_date = pd.to_datetime(end_date)
-    # start_date += pd.DateOffset(weeks=week)
-    # end_date += pd.DateOffset(weeks=week)
     df = get_posts_per_day(state, start_date, end_date)
     if df.empty:
-        return "No data available for this state"
+        return go.Figure()
     heatmap = create_count_streak(df)
     weeks = df['date'].dt.strftime('%U').unique()
     week_index = min(slider_value, len(weeks) - 1)
