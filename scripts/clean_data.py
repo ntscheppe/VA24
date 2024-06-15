@@ -5,6 +5,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from deep_translator import GoogleTranslator
 from pathlib import Path
+from random_word import RandomWords
 
 class DataCleaner:
     def __init__(self, data: pd.DataFrame):
@@ -15,6 +16,9 @@ class DataCleaner:
         """
         This method cleans the data by removing special characters, digits, and stopwords.
         """
+        # Anonymize usernames
+        self.anonymize_usernames()
+
         # Remove special characters and digits
         # Clean 'body' column
         self.data['cleaned_body'] = self.data['body'].apply(lambda x: re.sub(r'[^a-zA-Z\s]', '', str(x)))
@@ -42,6 +46,32 @@ class DataCleaner:
         self.data['cleaned_comment_body'] = self.data['cleaned_comment_body'].apply(
             lambda x: GoogleTranslator(source='auto', target='en').translate(x) if not x.isascii() else x)
         self.cleaned_data = self.data
+
+    def anonymize_usernames(self):
+        """
+        This method replaces Reddit usernames with random unique words.
+        """
+        unique_usernames = pd.concat([self.data['author_name'], self.data['comment_author_name']]).unique()
+        random_words = self.generate_random_words(len(unique_usernames))
+
+        username_mapping = dict(zip(unique_usernames, random_words))
+
+        self.data['author_name'] = self.data['author_name'].map(username_mapping)
+        self.data['comment_author_name'] = self.data['comment_author_name'].map(username_mapping)
+
+    def generate_random_words(self, n):
+        """
+        Generate a list of n unique random words.
+        """
+        r = RandomWords()
+        random_words = set()
+
+        while len(random_words) < n:
+            random_word = r.get_random_word()
+            if random_word:  # Ensure the word is not None
+                random_words.add(random_word.capitalize())
+
+        return list(random_words)
 
     def save_cleaned_data(self, file_path: str):
         """
